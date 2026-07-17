@@ -537,6 +537,21 @@ public class DiscDJRobotService extends Service {
         if (result == null) return;
         Rect r = result.cropRect != null ? result.cropRect : new Rect();
         emitLog("info", "Diagnostic BPM — platine " + deck + " · rect OCR " + r.left + "," + r.top + " · " + r.width() + "×" + r.height() + "px · écran " + result.displayWidth + "×" + result.displayHeight + "px.");
+        if (result.bpmDiagnostics != null && !result.bpmDiagnostics.isEmpty()) {
+            int i = 1;
+            for (DiscDJAccessibilityService.BpmParseDiagnostic d : result.bpmDiagnostics) {
+                String extracted = d.extracted == null ? "—" : String.valueOf(d.extracted);
+                emitLog("info", "Diagnostic BPM variante " + i
+                        + " · brut « " + preview(d.raw) + " »"
+                        + " · nettoyé « " + preview(d.cleaned) + " »"
+                        + " · corrigé « " + preview(d.corrected) + " »"
+                        + " · nombre " + extracted
+                        + " · " + (d.accepted ? "accepté" : "rejeté")
+                        + (d.reason != null ? " — " + d.reason : "") + ".");
+                i++;
+            }
+            return;
+        }
         if (result.zoneTexts == null || result.zoneTexts.isEmpty()) {
             emitLog("info", "Diagnostic BPM — rejet : aucun texte OCR détecté.");
             return;

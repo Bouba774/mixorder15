@@ -28,6 +28,15 @@ export interface DiscDJBpmReading {
   zoneTexts?: string[];
   /** Raw OCR variant lines, never concatenated. Mirrors zoneTexts on recent APKs. */
   ocrVariants?: string[];
+  /** Advanced BPM parser diagnostics, one item per raw OCR variant. */
+  bpmDiagnostics?: Array<{
+    raw: string;
+    cleaned: string;
+    corrected: string;
+    extracted: number | null;
+    accepted: boolean;
+    reason: string | null;
+  }>;
   /** Human-readable explanation when `bpm` is null (missing zone, no digit, etc.). */
   parseReason?: string | null;
   /** True only when the captured source is DiscDJ, never MixOrder/overlay. */
