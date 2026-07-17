@@ -106,52 +106,59 @@
 .dark {
   --radius: 0.875rem;
 
-  /* Studio Noir — sober blacks with a single precise green accent */
-  --background: #0F0F0F;
-  --foreground: #F8F8F8;
+  /* Slate Studio — modern neutral slate with a discreet blue accent */
+  --background: #111827;
+  --foreground: #F3F4F6;
 
-  --surface: #202020;
-  --surface-elevated: #2A2A2A;
+  --surface: #1F2937;
+  --surface-elevated: #374151;
 
-  --card: #202020;
-  --card-foreground: #F8F8F8;
+  --card: #374151;
+  --card-foreground: #F3F4F6;
 
-  --popover: #202020;
-  --popover-foreground: #F8F8F8;
+  --popover: #374151;
+  --popover-foreground: #F3F4F6;
 
-  --primary: #5DD62C;
-  --primary-foreground: #0A1A03;
-  --primary-glow: #5DD62C;
+  --primary: #60A5FA;
+  --primary-foreground: #0B1220;
+  --primary-glow: #93C5FD;
 
-  --bronze: #337418;
+  --bronze: #6B7280;
 
-  --secondary: #202020;
-  --secondary-foreground: #F8F8F8;
+  --secondary: #6B7280;
+  --secondary-foreground: #F3F4F6;
 
-  --muted: #181818;
-  --muted-foreground: #A1A1A1;
+  --muted: #1F2937;
+  --muted-foreground: #9CA3AF;
 
-  --accent: #5DD62C;
-  --accent-foreground: #0A1A03;
+  --accent: #60A5FA;
+  --accent-foreground: #0B1220;
 
-  --action: #5DD62C;
-  --action-foreground: #0A1A03;
+  --action: #60A5FA;
+  --action-foreground: #0B1220;
 
-  --success: #5DD62C;
-  --success-foreground: #0A1A03;
+  --success: #6EE7B7;
+  --success-foreground: #052E1F;
 
-  --destructive: #E5484D;
-  --destructive-foreground: #FFFFFF;
+  --destructive: #FCA5A5;
+  --destructive-foreground: #3B0A0A;
 
-  --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.16);
-  --input: rgba(255, 255, 255, 0.08);
-  --ring: color-mix(in oklab, #5DD62C 55%, transparent);
+  --warning: #FCD34D;
+  --warning-foreground: #3B2A05;
 
-  --gradient-primary: linear-gradient(135deg, #5DD62C 0%, #337418 100%);
-  --gradient-bronze: linear-gradient(135deg, #337418, #5DD62C);
-  --gradient-surface: linear-gradient(180deg, #202020 0%, #0F0F0F 100%);
-  --gradient-radial-gold: radial-gradient(circle at 50% 0%, color-mix(in oklab, #5DD62C 12%, transparent), transparent 60%);
+  --info: #93C5FD;
+  --info-foreground: #0B1E3B;
+
+  --border: rgba(209, 213, 219, 0.12);
+  --border-strong: rgba(209, 213, 219, 0.22);
+  --input: rgba(209, 213, 219, 0.14);
+  --ring: color-mix(in oklab, #60A5FA 55%, transparent);
+
+  --gradient-primary: linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%);
+  --gradient-bronze: linear-gradient(135deg, #6B7280, #9CA3AF);
+  --gradient-surface: linear-gradient(180deg, #1F2937 0%, #111827 100%);
+  --gradient-radial-gold: radial-gradient(circle at 50% 0%, color-mix(in oklab, #60A5FA 10%, transparent), transparent 60%);
+
 
   color-scheme: dark;
 }
@@ -162,51 +169,58 @@
 .light {
   --radius: 0.875rem;
 
-  --background: #F7F7F7;
-  --foreground: #0F0F0F;
+  --background: #F3F4F6;
+  --foreground: #111827;
 
   --surface: #FFFFFF;
-  --surface-elevated: #F0F0F0;
+  --surface-elevated: #F9FAFB;
 
   --card: #FFFFFF;
-  --card-foreground: #0F0F0F;
+  --card-foreground: #111827;
 
   --popover: #FFFFFF;
-  --popover-foreground: #0F0F0F;
+  --popover-foreground: #111827;
 
-  --primary: #337418;
+  --primary: #2563EB;
   --primary-foreground: #FFFFFF;
-  --primary-glow: #5DD62C;
+  --primary-glow: #60A5FA;
 
-  --bronze: #337418;
+  --bronze: #6B7280;
 
-  --secondary: #EAEAEA;
-  --secondary-foreground: #0F0F0F;
+  --secondary: #E5E7EB;
+  --secondary-foreground: #111827;
 
-  --muted: #F0F0F0;
-  --muted-foreground: #5A5A5A;
+  --muted: #F3F4F6;
+  --muted-foreground: #6B7280;
 
-  --accent: #337418;
+  --accent: #2563EB;
   --accent-foreground: #FFFFFF;
 
-  --action: #337418;
+  --action: #2563EB;
   --action-foreground: #FFFFFF;
 
-  --success: #337418;
+  --success: #059669;
   --success-foreground: #FFFFFF;
 
-  --destructive: #E5484D;
+  --destructive: #DC2626;
   --destructive-foreground: #FFFFFF;
 
-  --border: rgba(15, 15, 15, 0.10);
-  --border-strong: rgba(15, 15, 15, 0.20);
-  --input: rgba(15, 15, 15, 0.12);
-  --ring: color-mix(in oklab, #337418 55%, transparent);
+  --warning: #D97706;
+  --warning-foreground: #FFFFFF;
 
-  --gradient-primary: linear-gradient(135deg, #337418 0%, #5DD62C 100%);
-  --gradient-bronze: linear-gradient(135deg, #337418, #5DD62C);
-  --gradient-surface: linear-gradient(180deg, #FFFFFF, #F7F7F7);
-  --gradient-radial-gold: radial-gradient(circle at 50% 0%, color-mix(in oklab, #337418 8%, transparent), transparent 60%);
+  --info: #3B82F6;
+  --info-foreground: #FFFFFF;
+
+  --border: rgba(17, 24, 39, 0.10);
+  --border-strong: rgba(17, 24, 39, 0.18);
+  --input: rgba(17, 24, 39, 0.14);
+  --ring: color-mix(in oklab, #2563EB 45%, transparent);
+
+  --gradient-primary: linear-gradient(135deg, #2563EB 0%, #60A5FA 100%);
+  --gradient-bronze: linear-gradient(135deg, #6B7280, #9CA3AF);
+  --gradient-surface: linear-gradient(180deg, #FFFFFF, #F3F4F6);
+  --gradient-radial-gold: radial-gradient(circle at 50% 0%, color-mix(in oklab, #2563EB 8%, transparent), transparent 60%);
+
 
   color-scheme: light;
 }
