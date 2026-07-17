@@ -1995,7 +1995,14 @@ async function readBpmRobust(
     if (attemptVotes.size === 0 && isPlausibleBpm(last.bpm)) {
       const v = Math.round(last.bpm);
       variantIndex++;
-      logVariant?.(variantIndex, `native:${v}`, `native:${v}`, v);
+      logVariant?.(variantIndex, {
+        raw: `native:${v}`,
+        cleaned: `native:${v}`,
+        corrected: `native:${v}`,
+        extracted: v,
+        accepted: true,
+        reason: "Accepté : valeur déjà fournie par le pont natif.",
+      });
       attemptVotes.set(v, 1);
       votes.set(v, (votes.get(v) ?? 0) + 1);
     }
