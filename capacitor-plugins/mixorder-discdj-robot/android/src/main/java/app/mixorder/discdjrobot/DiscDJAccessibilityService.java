@@ -49,12 +49,6 @@ public class DiscDJAccessibilityService extends AccessibilityService {
 
     private static DiscDJAccessibilityService instance;
 
-    static final Pattern BPM_LABELED_PATTERN =
-            Pattern.compile("BPM\\s*[:：]?\\s*(\\d{2,3}(?:[.,]\\d+)?)", Pattern.CASE_INSENSITIVE);
-    static final Pattern BPM_LOOSE_PATTERN =
-            Pattern.compile("(?<![\\d.])(\\d{2,3}(?:[.,]\\d+)?)(?![\\d.])");
-    static final Pattern BPM_DIGIT_RUN_PATTERN =
-            Pattern.compile("\\d{2,3}");
     private static final Pattern DURATION_PATTERN =
             Pattern.compile("\\b\\d{1,2}:\\d{2}(?::\\d{2})?\\b");
 
@@ -121,6 +115,7 @@ public class DiscDJAccessibilityService extends AccessibilityService {
         public Double bpm;
         public String raw;
         public final List<String> zoneTexts = new ArrayList<>();
+        public final List<BpmParseDiagnostic> bpmDiagnostics = new ArrayList<>();
         public String parseReason;
         public String sourcePackage;
         public boolean sourceOk;
@@ -130,6 +125,21 @@ public class DiscDJAccessibilityService extends AccessibilityService {
         public String fullScreenshotDataUrl;
         public String croppedDataUrl;
         public String ocrInputDataUrl;
+    }
+
+    public static class BpmParseDiagnostic {
+        public String raw;
+        public String cleaned;
+        public String corrected;
+        public Integer extracted;
+        public boolean accepted;
+        public String reason;
+    }
+
+    private static class BpmParseDecision {
+        Double bpm;
+        String reason;
+        final List<BpmParseDiagnostic> diagnostics = new ArrayList<>();
     }
 
     public interface OcrCallback {
@@ -414,11 +424,15 @@ public class DiscDJAccessibilityService extends AccessibilityService {
             result.sourceOk = false;
             result.parseReason = "Mauvaise source d'image capturée : le texte OCR contient des éléments de MixOrder ou d'un overlay.";
         } else {
-            result.bpm = parseBestBpm(uniq);
+            BpmParseDecision decision = parseBestBpmDetailed(uniq);
+            result.bpm = decision.bpm;
+            result.bpmDiagnostics.addAll(decision.diagnostics);
             if (result.bpm == null) {
                 result.parseReason = uniq.isEmpty()
                         ? "OCR vide dans le rectangle BPM calibré (toutes variantes de prétraitement)."
-                        : "Texte OCR lu sur " + uniq.size() + " variantes séparées, mais aucun BPM valide entre 40 et 240.";
+                        : (decision.reason != null ? decision.reason : "Texte OCR lu sur " + uniq.size() + " variantes séparées, mais aucun BPM valide entre 40 et 240.");
+            } else {
+                result.parseReason = decision.reason;
             }
         }
         cb.onResult(result);
@@ -587,130 +601,179 @@ public class DiscDJAccessibilityService extends AccessibilityService {
         return out;
     }
 
-    private static boolean looksLikeBpmText(String t) {
-        if (t == null) return false;
-        String s = t.toLowerCase(java.util.Locale.ROOT);
-        return s.contains("bpm") || s.contains("b.p.m") || s.contains("tempo");
-    }
-
     public static Double parseBestBpm(List<String> texts) {
-
-        if (texts == null || texts.isEmpty()) return null;
-        // OCR variants can disagree by one digit (e.g. 127 vs 121). Keep the
-        // parser conservative: labelled/clean BPM-looking lines win, loose UI
-        // noise contributes little, and near-ties prefer the candidate that is
-        // supported by cleaner text instead of just the highest number.
-        java.util.Map<Integer, Integer> votes = new java.util.HashMap<>();
-        java.util.Map<Integer, Integer> cleanVotes = new java.util.HashMap<>();
-        for (String t : texts) {
-            if (t == null) continue;
-            String normalized = normalizeOcrDigits(t);
-            boolean cleanNumeric = normalized.matches("\\s*(?:bpm\\s*[:：]?)?\\s*\\d{2,3}(?:[.,]\\d+)?\\s*");
-            int alphaCount = countLetters(normalized);
-            String labelSource = normalized.replaceAll("(?i)8PM", "BPM");
-            Matcher lm = BPM_LABELED_PATTERN.matcher(labelSource);
-            while (lm.find()) {
-                Double v = tryParseBpm(lm.group(1));
-                if (v != null) {
-                    int k = (int) Math.round(v);
-                    votes.merge(k, 5, Integer::sum); // labelled → heavy weight
-                    cleanVotes.merge(k, 3, Integer::sum);
-                }
-            }
-            Matcher m2 = BPM_LOOSE_PATTERN.matcher(normalized);
-            while (m2.find()) {
-                Double v = tryParseBpm(m2.group(1));
-                if (v != null) {
-                    if (!cleanNumeric && !looksLikeBpmText(normalized) && alphaCount > 3) continue;
-                    int k = (int) Math.round(v);
-                    int weight = looksLikeBpmText(normalized) ? 3 : 1;
-                    if (cleanNumeric) weight += 3;
-                    if (k >= 100) weight += 1;
-                    votes.merge(k, weight, Integer::sum);
-                    if (cleanNumeric) cleanVotes.merge(k, 2, Integer::sum);
-                }
-            }
-        }
-        if (votes.isEmpty()) return null;
-        int bestKey = -1, runnerKey = -1;
-        int bestScore = -1, runnerScore = -1;
-        for (java.util.Map.Entry<Integer, Integer> e : votes.entrySet()) {
-            int score = e.getValue();
-            int k = e.getKey();
-            int clean = cleanVotes.getOrDefault(k, 0);
-            int bestClean = cleanVotes.getOrDefault(bestKey, 0);
-            if (score > bestScore || (score == bestScore && clean > bestClean) || (score == bestScore && clean == bestClean && k > bestKey)) {
-                runnerScore = bestScore;
-                runnerKey = bestKey;
-                bestScore = score;
-                bestKey = k;
-            } else if (score > runnerScore) {
-                runnerScore = score;
-                runnerKey = k;
-            }
-        }
-
-        // If two values are close (121 vs 127), require clean support for the
-        // winner. Otherwise return null so the robot retries instead of saving
-        // a plausible but wrong BPM.
-        if (runnerKey >= 40 && Math.abs(bestKey - runnerKey) <= 8 && runnerScore > 0 && bestScore - runnerScore <= 2) {
-            int bestClean = cleanVotes.getOrDefault(bestKey, 0);
-            int runnerClean = cleanVotes.getOrDefault(runnerKey, 0);
-            if (bestClean <= runnerClean && bestScore < runnerScore + 3) return null;
-        }
-        return bestKey >= 40 && bestKey <= 240 ? (double) bestKey : null;
+        return parseBestBpmDetailed(texts).bpm;
     }
 
     public static Double parseSingleBpmVariant(String text) {
         if (text == null || text.trim().isEmpty()) return null;
-        java.util.List<String> one = new java.util.ArrayList<>();
-        one.add(text);
-        return parseBestBpm(one);
+        BpmParseDiagnostic d = parseBpmVariantDetailed(text);
+        return d.accepted && d.extracted != null ? (double) d.extracted : null;
     }
-
-    private static int countLetters(String s) {
-        if (s == null) return 0;
-        int c = 0;
-        for (int i = 0; i < s.length(); i++) if (Character.isLetter(s.charAt(i))) c++;
-        return c;
-    }
-
-    private static String normalizeOcrDigits(String input) {
-        if (input == null) return "";
-        return input
-                .replace('O', '0').replace('o', '0')
-                .replace('I', '1').replace('l', '1').replace('|', '1')
-                .replace('S', '5').replace('s', '5')
-                .replace('B', '8')
-                .trim();
-    }
-
-
 
     public static Double parseBpm(String raw) {
         if (raw == null) return null;
-        Matcher m = BPM_LABELED_PATTERN.matcher(raw);
-        if (m.find()) {
-            Double v = tryParseBpm(m.group(1));
-            if (v != null) return v;
+        return parseSingleBpmVariant(raw);
+    }
+
+    private static BpmParseDecision parseBestBpmDetailed(List<String> texts) {
+        BpmParseDecision decision = new BpmParseDecision();
+        if (texts == null || texts.isEmpty()) {
+            decision.reason = "Rejet : aucun texte OCR brut reçu.";
+            return decision;
         }
-        Matcher m2 = BPM_LOOSE_PATTERN.matcher(raw);
-        while (m2.find()) {
-            Double v = tryParseBpm(m2.group(1));
-            if (v != null) return v;
+
+        java.util.Map<Integer, Integer> votes = new java.util.LinkedHashMap<>();
+        Integer firstAccepted = null;
+        for (String text : texts) {
+            BpmParseDiagnostic d = parseBpmVariantDetailed(text);
+            decision.diagnostics.add(d);
+            if (d.accepted && d.extracted != null) {
+                if (firstAccepted == null) firstAccepted = d.extracted;
+                votes.merge(d.extracted, 1, Integer::sum);
+            }
+        }
+
+        if (votes.isEmpty()) {
+            StringBuilder why = new StringBuilder("Rejet : aucun BPM valide entre 40 et 240 après nettoyage/correction OCR.");
+            for (BpmParseDiagnostic d : decision.diagnostics) {
+                if (d.reason != null && !d.reason.isEmpty()) {
+                    why.append(" Variante « ").append(previewForReason(d.raw)).append(" » : ").append(d.reason).append(".");
+                }
+            }
+            decision.reason = why.toString();
+            return decision;
+        }
+
+        int best = firstAccepted != null ? firstAccepted : votes.keySet().iterator().next();
+        int bestCount = votes.getOrDefault(best, 0);
+        for (java.util.Map.Entry<Integer, Integer> e : votes.entrySet()) {
+            if (e.getValue() > bestCount) {
+                best = e.getKey();
+                bestCount = e.getValue();
+            }
+        }
+        decision.bpm = (double) best;
+        decision.reason = "Accepté : BPM " + best + " extrait après nettoyage/correction OCR (" + bestCount + " occurrence" + (bestCount > 1 ? "s" : "") + ").";
+        return decision;
+    }
+
+    private static BpmParseDiagnostic parseBpmVariantDetailed(String raw) {
+        BpmParseDiagnostic d = new BpmParseDiagnostic();
+        d.raw = raw == null ? "" : raw;
+        d.cleaned = cleanBpmOcrText(d.raw);
+        d.corrected = correctBpmOcrText(d.cleaned);
+        Integer labelled = extractLabelledBpm(d.corrected);
+        if (labelled != null) {
+            d.extracted = labelled;
+            d.accepted = true;
+            d.reason = "Accepté : nombre extrait après libellé BPM.";
+            return d;
+        }
+        Integer loose = extractLooseBpm(d.corrected);
+        if (loose != null) {
+            d.extracted = loose;
+            d.accepted = true;
+            d.reason = "Accepté : nombre plausible extrait sans libellé BPM.";
+            return d;
+        }
+        d.accepted = false;
+        d.reason = "aucun nombre 40–240 détecté après suppression des espaces et correction des caractères ambigus";
+        return d;
+    }
+
+    private static String cleanBpmOcrText(String input) {
+        if (input == null) return "";
+        String s = java.text.Normalizer.normalize(input, java.text.Normalizer.Form.NFKC);
+        return s
+                .replace('\u00A0', ' ')
+                .replace('\u202F', ' ')
+                .replace('\u2007', ' ')
+                .replaceAll("[\\u200B-\\u200D\\uFEFF]", "")
+                .replaceAll("[\\p{Cntrl}]+", " ")
+                .replace('：', ':')
+                .replaceAll("\\s+", " ")
+                .trim();
+    }
+
+    private static String correctBpmOcrText(String input) {
+        if (input == null || input.isEmpty()) return "";
+        String compactLabel = input
+                .replaceAll("(?i)\\bB\\s*P\\s*M\\b", "BPM")
+                .replaceAll("(?i)(?<![A-Z0-9])8\\s*P\\s*M\\b", "BPM")
+                .replaceAll("(?i)B\\.\\s*P\\.\\s*M\\.", "BPM");
+        StringBuilder out = new StringBuilder(compactLabel.length());
+        for (int i = 0; i < compactLabel.length(); i++) {
+            char ch = compactLabel.charAt(i);
+            char prev = i > 0 ? compactLabel.charAt(i - 1) : '\0';
+            char next = i + 1 < compactLabel.length() ? compactLabel.charAt(i + 1) : '\0';
+            boolean digitContext = Character.isDigit(prev) || Character.isDigit(next) || prev == ':' || prev == '=' || prev == '-' || prev == ' ';
+            if ((ch == 'I' || ch == 'i' || ch == 'l' || ch == '|' || ch == '!') && digitContext) out.append('1');
+            else if ((ch == 'O' || ch == 'o') && digitContext) out.append('0');
+            else if ((ch == 'S' || ch == 's') && digitContext) out.append('5');
+            else if ((ch == 'Z' || ch == 'z') && digitContext) out.append('2');
+            else if ((ch == 'G' || ch == 'g' || ch == 'Q' || ch == 'q') && digitContext) out.append('9');
+            else if ((ch == 'B' || ch == 'b') && (Character.isDigit(prev) || Character.isDigit(next))) out.append('8');
+            else out.append(ch);
+        }
+        return out.toString()
+                .replaceAll("(?<=\\d)\\s+(?=\\d)", "")
+                .replaceAll("\\s+", " ")
+                .trim();
+    }
+
+    private static Integer extractLabelledBpm(String corrected) {
+        if (corrected == null || corrected.isEmpty()) return null;
+        Pattern labelled = Pattern.compile("(?i)B\\s*P\\s*M\\s*[:=\\-]?\\s*([0-9][0-9\\s\\u00A0\\u202F.,]{0,8})");
+        Matcher m = labelled.matcher(corrected);
+        while (m.find()) {
+            Integer n = firstValidBpmFromToken(m.group(1));
+            if (n != null) return n;
         }
         return null;
     }
 
-    private static Double tryParseBpm(String s) {
-        if (s == null) return null;
+    private static Integer extractLooseBpm(String corrected) {
+        if (corrected == null || corrected.isEmpty()) return null;
+        Pattern loose = Pattern.compile("(?<!\\d)([0-9](?:[0-9\\s\\u00A0\\u202F.,]{0,8}[0-9])?)(?!\\d)");
+        Matcher m = loose.matcher(corrected);
+        while (m.find()) {
+            Integer n = firstValidBpmFromToken(m.group(1));
+            if (n != null) return n;
+        }
+        return null;
+    }
+
+    private static Integer firstValidBpmFromToken(String token) {
+        if (token == null) return null;
+        String digits = token.replaceAll("\\D+", "");
+        if (digits.length() < 2) return null;
+        if (digits.length() <= 3) {
+            Integer n = parseBpmInt(digits);
+            if (n != null) return n;
+        }
+        for (int len : new int[] { 3, 2 }) {
+            for (int i = 0; i + len <= digits.length(); i++) {
+                Integer n = parseBpmInt(digits.substring(i, i + len));
+                if (n != null) return n;
+            }
+        }
+        return null;
+    }
+
+    private static Integer parseBpmInt(String s) {
         try {
-            double v = Double.parseDouble(s.replace(',', '.'));
-            if (v < 40 || v > 240) return null;
-            return v;
+            int v = Integer.parseInt(s);
+            return v >= 40 && v <= 240 ? v : null;
         } catch (NumberFormatException e) {
             return null;
         }
+    }
+
+    private static String previewForReason(String text) {
+        if (text == null) return "∅";
+        String s = text.replaceAll("\\s+", " ").trim();
+        return s.length() > 40 ? s.substring(0, 40) + "…" : s;
     }
 
     public static String extractDuration(String raw) {

@@ -228,6 +228,19 @@ public class DiscDJRobotPlugin extends Plugin {
             for (String text : result.zoneTexts) zoneTexts.put(text);
             out.put("zoneTexts", zoneTexts);
             out.put("ocrVariants", zoneTexts);
+            JSArray bpmDiagnostics = new JSArray();
+            for (DiscDJAccessibilityService.BpmParseDiagnostic d : result.bpmDiagnostics) {
+                JSObject item = new JSObject();
+                item.put("raw", d.raw);
+                item.put("cleaned", d.cleaned);
+                item.put("corrected", d.corrected);
+                if (d.extracted != null) item.put("extracted", d.extracted);
+                else item.put("extracted", (Integer) null);
+                item.put("accepted", d.accepted);
+                item.put("reason", d.reason);
+                bpmDiagnostics.put(item);
+            }
+            out.put("bpmDiagnostics", bpmDiagnostics);
             out.put("parseReason", result.parseReason);
             out.put("sourcePackage", result.sourcePackage);
             out.put("sourceOk", result.sourceOk);

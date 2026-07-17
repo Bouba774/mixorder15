@@ -452,7 +452,16 @@ function PanelTab({ active, onClick, icon, label }: { active: boolean; onClick: 
   return <button onClick={onClick} className={`inline-flex h-9 items-center justify-center gap-1 rounded-lg text-[11px] font-semibold transition-colors ${active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent/40 hover:text-foreground"}`}>{icon}<span className="hidden min-[380px]:inline">{label}</span></button>;
 }
 
-type TestResult = { ok: boolean; text: string; details?: { bpm: number | null; title: string | null; durationSec: number | null; raw?: string | null; zoneTexts?: string[]; parseReason?: string | null; bpmZone?: CalibrationRect | null; sourceOk?: boolean; orientationOk?: boolean; sourcePackage?: string | null; fullScreenshot?: string | null; croppedImage?: string | null; ocrInputImage?: string | null; ocrRect?: { left: number; top: number; width: number; height: number } | null; display?: { width: number; height: number } | null } };
+type BpmDiagnostic = {
+  raw: string;
+  cleaned: string;
+  corrected: string;
+  extracted: number | null;
+  accepted: boolean;
+  reason: string | null;
+};
+
+type TestResult = { ok: boolean; text: string; details?: { bpm: number | null; title: string | null; durationSec: number | null; raw?: string | null; zoneTexts?: string[]; bpmDiagnostics?: BpmDiagnostic[]; parseReason?: string | null; bpmZone?: CalibrationRect | null; sourceOk?: boolean; orientationOk?: boolean; sourcePackage?: string | null; fullScreenshot?: string | null; croppedImage?: string | null; ocrInputImage?: string | null; ocrRect?: { left: number; top: number; width: number; height: number } | null; display?: { width: number; height: number } | null } };
 
 function CalibrationPanel({
   settings,
@@ -509,7 +518,7 @@ function CalibrationPanel({
     const r = await onTestRead(deck);
     setTesting(null);
     const zone = deck === 1 ? settings.calibration.bpmDeck1 : settings.calibration.bpmDeck2;
-    const details = r ? { bpm: r.bpm, title: r.title, durationSec: r.durationSec, raw: r.raw ?? null, zoneTexts: r.zoneTexts, parseReason: r.parseReason ?? null, bpmZone: zone, sourceOk: r.sourceOk, orientationOk: r.orientationOk, sourcePackage: r.sourcePackage ?? null, fullScreenshot: r.fullScreenshot ?? null, croppedImage: r.croppedImage ?? null, ocrInputImage: r.ocrInputImage ?? null, ocrRect: r.ocrRect ? { left: r.ocrRect.left, top: r.ocrRect.top, width: r.ocrRect.width, height: r.ocrRect.height } : null, display: r.display ?? null } : null;
+    const details = r ? { bpm: r.bpm, title: r.title, durationSec: r.durationSec, raw: r.raw ?? null, zoneTexts: r.zoneTexts, bpmDiagnostics: r.bpmDiagnostics, parseReason: r.parseReason ?? null, bpmZone: zone, sourceOk: r.sourceOk, orientationOk: r.orientationOk, sourcePackage: r.sourcePackage ?? null, fullScreenshot: r.fullScreenshot ?? null, croppedImage: r.croppedImage ?? null, ocrInputImage: r.ocrInputImage ?? null, ocrRect: r.ocrRect ? { left: r.ocrRect.left, top: r.ocrRect.top, width: r.ocrRect.width, height: r.ocrRect.height } : null, display: r.display ?? null } : null;
     if (r && r.bpm != null) {
       setTestResult((p) => ({ ...p, [deck]: { ok: true, text: `BPM lu : ${r.bpm}`, details: details ?? undefined } }));
     } else {
@@ -691,6 +700,24 @@ function CalibrationPanel({
                           <DiagnosticImage label="Capture complète DiscDJ utilisée" src={res.details.fullScreenshot} />
                           <DiagnosticImage label="Rectangle OCR réellement découpé" src={res.details.croppedImage} />
                           <DiagnosticImage label="Image transmise au moteur OCR" src={res.details.ocrInputImage} />
+                        </div>
+                      )}
+                      {res.details.bpmDiagnostics && res.details.bpmDiagnostics.length > 0 && (
+                        <div className="space-y-1 rounded-md border border-border/60 bg-background/60 p-2">
+                          <p className="text-[10px] font-semibold text-foreground">Diagnostic avancé BPM</p>
+                          <div className="max-h-40 space-y-1 overflow-auto">
+                            {res.details.bpmDiagnostics.map((diag, index) => (
+                              <div key={`${diag.raw}-${index}`} className={`rounded border px-2 py-1 ${diag.accepted ? "border-primary/30 bg-primary/5" : "border-destructive/30 bg-destructive/5"}`}>
+                                <p className="font-semibold text-foreground">Variante {index + 1} · {diag.accepted ? "acceptée" : "rejetée"} · nombre {diag.extracted ?? "—"}</p>
+                                <dl className="mt-0.5 grid grid-cols-[auto,1fr] gap-x-2 gap-y-0.5 text-muted-foreground">
+                                  <dt>brut</dt><dd className="break-all font-mono text-foreground">{diag.raw || "—"}</dd>
+                                  <dt>nettoyé</dt><dd className="break-all font-mono text-foreground">{diag.cleaned || "—"}</dd>
+                                  <dt>corrigé</dt><dd className="break-all font-mono text-foreground">{diag.corrected || "—"}</dd>
+                                  <dt>raison</dt><dd className="text-foreground">{diag.reason ?? "—"}</dd>
+                                </dl>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
                       {!res.ok && res.details.parseReason && (

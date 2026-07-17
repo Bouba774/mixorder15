@@ -37,6 +37,8 @@ export interface DiscDJReading {
   ocrVariants?: string[];
   /** Human explanation when `bpm` is null. */
   parseReason?: string | null;
+  /** Advanced BPM parser diagnostics, one item per raw OCR variant. */
+  bpmDiagnostics?: BpmParseDiagnostic[];
   /** True when the capture source is confirmed to be DiscDJ, not MixOrder/overlay. */
   sourceOk?: boolean;
   /** True when DiscDJ/capture is confirmed in landscape orientation. */
@@ -55,6 +57,15 @@ export interface DiscDJReading {
   display?: { width: number; height: number } | null;
   /** True when the deck reports no more tracks in the current playlist. */
   endOfPlaylist?: boolean;
+}
+
+export interface BpmParseDiagnostic {
+  raw: string;
+  cleaned: string;
+  corrected: string;
+  extracted: number | null;
+  accepted: boolean;
+  reason: string | null;
 }
 
 /**
@@ -350,6 +361,7 @@ function createNativeBridge(): DiscDJBridge {
         durationSec,
         raw: r.raw ?? undefined,
         zoneTexts: Array.isArray(r.ocrVariants) ? r.ocrVariants : Array.isArray(r.zoneTexts) ? r.zoneTexts : [],
+        bpmDiagnostics: Array.isArray(r.bpmDiagnostics) ? r.bpmDiagnostics : [],
         parseReason: r.parseReason ?? null,
         sourceOk: r.sourceOk,
         orientationOk: r.orientationOk,
@@ -427,6 +439,7 @@ interface NativeReading {
   duration: string | null;
   zoneTexts?: string[];
   ocrVariants?: string[];
+  bpmDiagnostics?: BpmParseDiagnostic[];
   parseReason?: string | null;
   sourceOk?: boolean;
   orientationOk?: boolean;
