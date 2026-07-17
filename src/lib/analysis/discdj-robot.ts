@@ -960,15 +960,15 @@ export function useDiscDJRobot() {
               perTrackAttempts,
               previousBpm,
               () => runIdRef.current === runId,
-              (idx, raw, corrected, bpm) => {
-                const shown = raw.trim().slice(0, 48) || "∅";
-                if (bpm == null) {
-                  log("info", `Variante ${idx} : « ${shown} » → aucun BPM lisible`);
-                } else if (corrected.trim() !== raw.trim()) {
-                  log("info", `Variante ${idx} : « ${shown} » → corrigé « ${corrected.trim().slice(0, 48)} » → BPM ${bpm}`);
-                } else {
-                  log("info", `Variante ${idx} : « ${shown} » → BPM ${bpm}`);
-                }
+              (idx, diagnostic) => {
+                const shown = diagnostic.raw.trim().slice(0, 48) || "∅";
+                const cleaned = diagnostic.cleaned.trim().slice(0, 48) || "∅";
+                const corrected = diagnostic.corrected.trim().slice(0, 48) || "∅";
+                const extracted = diagnostic.extracted == null ? "—" : String(diagnostic.extracted);
+                log(
+                  "info",
+                  `Diagnostic BPM variante ${idx} · brut « ${shown} » · nettoyé « ${cleaned} » · corrigé « ${corrected} » · nombre ${extracted} · ${diagnostic.accepted ? "accepté" : "rejeté"}${diagnostic.reason ? ` — ${diagnostic.reason}` : ""}.`,
+                );
               },
               (message) => log("info", message),
             );
@@ -1783,17 +1783,46 @@ async function readBpmOnce(
  * Applied to each variant string independently — never to a concatenation
  * of variants (that would let one bad glyph spread across the whole batch).
  */
-function correctOcrDigits(s: string): string {
-  return s
-    .replace(/l/g, "1")
-    .replace(/I/g, "1")
-    .replace(/\|/g, "1")
-    .replace(/[Oo]/g, "0")
-    .replace(/[Zz](?=\d)|(?<=\d)[Zz]/g, "2")
-    .replace(/S(?=\d)|(?<=\d)S/g, "5")
-    .replace(/[Gg](?=\d)|(?<=\d)[Gg]/g, "9")
-    .replace(/[Qq](?=\d)|(?<=\d)[Qq]/g, "9")
-    .replace(/B(?=\d)|(?<=\d)B/g, "8");
+function cleanBpmOcrText(s: string): string {
+  return (s ?? "")
+    .normalize("NFKC")
+    .replace(/[\u00A0\u202F\u2007]/g, " ")
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .replace(/[\u0000-\u001f\u007f]+/g, " ")
+    .replace(/：/g, ":")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function correctBpmOcrText(s: string): string {
+  const compactLabel = cleanBpmOcrText(s)
+    .replace(/\bB\s*P\s*M\b/gi, "BPM")
+    .replace(/(?<![A-Z0-9])8\s*P\s*M\b/gi, "BPM")
+    .replace(/B\.\s*P\.\s*M\./gi, "BPM");
+  let out = "";
+  for (let i = 0; i < compactLabel.length; i++) {
+    const ch = compactLabel[i];
+    const prev = compactLabel[i - 1] ?? "";
+    const next = compactLabel[i + 1] ?? "";
+    const digitContext = /\d|[:=\-\s]/.test(prev) || /\d/.test(next);
+    if ((ch === "I" || ch === "l" || ch === "|" || ch === "!") && digitContext) out += "1";
+    else if ((ch === "O" || ch === "o") && digitContext) out += "0";
+    else if ((ch === "S" || ch === "s") && digitContext) out += "5";
+    else if ((ch === "Z" || ch === "z") && digitContext) out += "2";
+    else if ((ch === "G" || ch === "g" || ch === "Q" || ch === "q") && digitContext) out += "9";
+    else if (ch === "B" && (/\d/.test(prev) || /\d/.test(next))) out += "8";
+    else out += ch;
+  }
+  return out.replace(/(?<=\d)\s+(?=\d)/g, "").replace(/\s+/g, " ").trim();
+}
+
+interface BpmVariantDiagnostic {
+  raw: string;
+  cleaned: string;
+  corrected: string;
+  extracted: number | null;
+  accepted: boolean;
+  reason: string | null;
 }
 
 /**
@@ -1801,27 +1830,88 @@ function correctOcrDigits(s: string): string {
  * 1. Digits after a "BPM" label (strongest signal).
  * 2. Any 2-3 digit cluster in range — prefer 3-digit so "150" beats "50".
  */
-function extractBpmFromVariant(text: string): { bpm: number | null; corrected: string; reason: string | null } {
-  if (!text) return { bpm: null, corrected: "", reason: "aucun texte détecté" };
-  const corrected = correctOcrDigits(text);
-  const labelled = corrected.match(/BPM[^0-9]{0,8}(\d{2,3})/i);
-  if (labelled) {
-    const v = Number(labelled[1]);
-    if (v >= 40 && v <= 240) return { bpm: v, corrected, reason: null };
-    return { bpm: null, corrected, reason: `valeur étiquetée hors plage (${v})` };
+function extractBpmFromVariant(text: string): BpmVariantDiagnostic & { bpm: number | null } {
+  const raw = text ?? "";
+  const cleaned = cleanBpmOcrText(raw);
+  const corrected = correctBpmOcrText(cleaned);
+  if (!cleaned) {
+    return { raw, cleaned, corrected, extracted: null, accepted: false, reason: "aucun texte OCR brut", bpm: null };
   }
-  const alphaCount = (corrected.match(/\p{L}/gu) ?? []).length;
-  const digitCount = (corrected.match(/\d/g) ?? []).length;
-  const numericLike = digitCount > 0 && alphaCount <= 3;
-  if (!numericLike) {
-    return { bpm: null, corrected, reason: "texte non numérique sans libellé BPM — probable mauvaise zone" };
+
+  const labelled = extractLabelledBpm(corrected);
+  if (labelled != null) {
+    return {
+      raw,
+      cleaned,
+      corrected,
+      extracted: labelled,
+      accepted: true,
+      reason: "Accepté : nombre extrait après libellé BPM.",
+      bpm: labelled,
+    };
   }
-  const clusters = Array.from(corrected.matchAll(/\d{2,3}/g))
-    .map((m) => Number(m[0]))
-    .filter((n) => n >= 40 && n <= 240);
-  if (clusters.length === 0) return { bpm: null, corrected, reason: "aucun nombre valide entre 40 et 240" };
-  const three = clusters.filter((n) => n >= 100);
-  return { bpm: three[0] ?? clusters[0], corrected, reason: null };
+
+  const loose = extractLooseBpm(corrected);
+  if (loose != null) {
+    return {
+      raw,
+      cleaned,
+      corrected,
+      extracted: loose,
+      accepted: true,
+      reason: "Accepté : nombre plausible extrait sans libellé BPM.",
+      bpm: loose,
+    };
+  }
+
+  return {
+    raw,
+    cleaned,
+    corrected,
+    extracted: null,
+    accepted: false,
+    reason: "aucun nombre 40–240 détecté après suppression des espaces et correction des caractères ambigus",
+    bpm: null,
+  };
+}
+
+function extractLabelledBpm(corrected: string): number | null {
+  const labelled = /B\s*P\s*M\s*[:=\-]?\s*([0-9][0-9\s\u00A0\u202F.,]{0,8})/gi;
+  for (const match of corrected.matchAll(labelled)) {
+    const bpm = firstValidBpmFromToken(match[1]);
+    if (bpm != null) return bpm;
+  }
+  return null;
+}
+
+function extractLooseBpm(corrected: string): number | null {
+  const loose = /(?<!\d)([0-9](?:[0-9\s\u00A0\u202F.,]{0,8}[0-9])?)(?!\d)/g;
+  for (const match of corrected.matchAll(loose)) {
+    const bpm = firstValidBpmFromToken(match[1]);
+    if (bpm != null) return bpm;
+  }
+  return null;
+}
+
+function firstValidBpmFromToken(token: string): number | null {
+  const digits = token.replace(/\D+/g, "");
+  if (digits.length < 2) return null;
+  if (digits.length <= 3) {
+    const full = toBpmInt(digits);
+    if (full != null) return full;
+  }
+  for (const len of [3, 2]) {
+    for (let i = 0; i + len <= digits.length; i++) {
+      const bpm = toBpmInt(digits.slice(i, i + len));
+      if (bpm != null) return bpm;
+    }
+  }
+  return null;
+}
+
+function toBpmInt(digits: string): number | null {
+  const n = Number.parseInt(digits, 10);
+  return Number.isInteger(n) && n >= 40 && n <= 240 ? n : null;
 }
 
 function collectVariants(reading: DiscDJReading): string[] {
@@ -1865,7 +1955,7 @@ async function readBpmRobust(
   maxAttempts: number,
   _previousBpm: number | null,
   stillRunning: () => boolean,
-  logVariant?: (index: number, raw: string, corrected: string, bpm: number | null) => void,
+  logVariant?: (index: number, diagnostic: BpmVariantDiagnostic) => void,
   logDiagnostic?: (message: string) => void,
 ): Promise<{ bpm: number | null; reading: DiscDJReading; attempts: number; reason?: string }> {
   const votes = new Map<number, number>();
@@ -1891,8 +1981,9 @@ async function readBpmRobust(
     const attemptVotes = new Map<number, number>();
     for (const v of variants) {
       variantIndex++;
-      const { bpm, corrected, reason } = extractBpmFromVariant(v);
-      logVariant?.(variantIndex, v, corrected, bpm);
+      const diagnostic = extractBpmFromVariant(v);
+      const { bpm, reason } = diagnostic;
+      logVariant?.(variantIndex, diagnostic);
       if (bpm == null && reason) logDiagnostic?.(`Variante ${variantIndex} rejetée : ${reason}.`);
       if (bpm != null) {
         attemptVotes.set(bpm, (attemptVotes.get(bpm) ?? 0) + 1);
