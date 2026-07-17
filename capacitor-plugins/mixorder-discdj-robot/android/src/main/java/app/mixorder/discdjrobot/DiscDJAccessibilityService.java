@@ -49,12 +49,6 @@ public class DiscDJAccessibilityService extends AccessibilityService {
 
     private static DiscDJAccessibilityService instance;
 
-    static final Pattern BPM_LABELED_PATTERN =
-            Pattern.compile("BPM\\s*[:：]?\\s*(\\d{2,3}(?:[.,]\\d+)?)", Pattern.CASE_INSENSITIVE);
-    static final Pattern BPM_LOOSE_PATTERN =
-            Pattern.compile("(?<![\\d.])(\\d{2,3}(?:[.,]\\d+)?)(?![\\d.])");
-    static final Pattern BPM_DIGIT_RUN_PATTERN =
-            Pattern.compile("\\d{2,3}");
     private static final Pattern DURATION_PATTERN =
             Pattern.compile("\\b\\d{1,2}:\\d{2}(?::\\d{2})?\\b");
 
@@ -714,7 +708,7 @@ public class DiscDJAccessibilityService extends AccessibilityService {
             char prev = i > 0 ? compactLabel.charAt(i - 1) : '\0';
             char next = i + 1 < compactLabel.length() ? compactLabel.charAt(i + 1) : '\0';
             boolean digitContext = Character.isDigit(prev) || Character.isDigit(next) || prev == ':' || prev == '=' || prev == '-' || prev == ' ';
-            if ((ch == 'I' || ch == 'l' || ch == '|' || ch == '!') && digitContext) out.append('1');
+            if ((ch == 'I' || ch == 'i' || ch == 'l' || ch == '|' || ch == '!') && digitContext) out.append('1');
             else if ((ch == 'O' || ch == 'o') && digitContext) out.append('0');
             else if ((ch == 'S' || ch == 's') && digitContext) out.append('5');
             else if ((ch == 'Z' || ch == 'z') && digitContext) out.append('2');

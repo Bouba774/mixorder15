@@ -1805,7 +1805,7 @@ function correctBpmOcrText(s: string): string {
     const prev = compactLabel[i - 1] ?? "";
     const next = compactLabel[i + 1] ?? "";
     const digitContext = /\d|[:=\-\s]/.test(prev) || /\d/.test(next);
-    if ((ch === "I" || ch === "l" || ch === "|" || ch === "!") && digitContext) out += "1";
+    if ((ch === "I" || ch === "i" || ch === "l" || ch === "|" || ch === "!") && digitContext) out += "1";
     else if ((ch === "O" || ch === "o") && digitContext) out += "0";
     else if ((ch === "S" || ch === "s") && digitContext) out += "5";
     else if ((ch === "Z" || ch === "z") && digitContext) out += "2";
@@ -2036,11 +2036,12 @@ async function readBpmRobust(
   for (const [v, c] of votes) {
     if (c > bestC) { bestC = c; bestVal = v; }
   }
-  if (bestVal != null) return { bpm: bestVal, reading: last, attempts: attempt };
+  const attemptsUsed = Math.min(attempt, maxAttempts);
+  if (bestVal != null) return { bpm: bestVal, reading: last, attempts: attemptsUsed };
   return {
     bpm: null,
     reading: last,
-    attempts: attempt,
+    attempts: attemptsUsed,
     reason: last.parseReason ?? "BPM illisible après toutes les corrections OCR",
   };
 }
