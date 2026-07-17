@@ -712,7 +712,8 @@ public class DiscDJAccessibilityService extends AccessibilityService {
             else if ((ch == 'O' || ch == 'o') && digitContext) out.append('0');
             else if ((ch == 'S' || ch == 's') && digitContext) out.append('5');
             else if ((ch == 'Z' || ch == 'z') && digitContext) out.append('2');
-            else if ((ch == 'B') && (Character.isDigit(prev) || Character.isDigit(next))) out.append('8');
+            else if ((ch == 'G' || ch == 'g' || ch == 'Q' || ch == 'q') && digitContext) out.append('9');
+            else if ((ch == 'B' || ch == 'b') && (Character.isDigit(prev) || Character.isDigit(next))) out.append('8');
             else out.append(ch);
         }
         return out.toString()
