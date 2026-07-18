@@ -106,58 +106,62 @@
 .dark {
   --radius: 0.875rem;
 
-  /* Slate Studio — modern neutral slate with a discreet blue accent */
+  /* Neutral Studio — charcoal surfaces, soft accents only for state */
   --background: #111827;
   --foreground: #F3F4F6;
 
-  --surface: #1F2937;
-  --surface-elevated: #374151;
+  --surface: #1D1D1D;
+  --surface-elevated: #262626;
 
-  --card: #374151;
+  --card: #1D1D1D;
   --card-foreground: #F3F4F6;
 
-  --popover: #374151;
+  --popover: #1D1D1D;
   --popover-foreground: #F3F4F6;
 
-  --primary: #60A5FA;
-  --primary-foreground: #0B1220;
-  --primary-glow: #93C5FD;
+  /* Primary is a soft neutral light — no dominant hue */
+  --primary: #F3F4F6;
+  --primary-foreground: #111827;
+  --primary-glow: #D1D5DB;
 
   --bronze: #6B7280;
 
-  --secondary: #6B7280;
+  --secondary: #262626;
   --secondary-foreground: #F3F4F6;
 
-  --muted: #1F2937;
-  --muted-foreground: #9CA3AF;
+  --muted: #1D1D1D;
+  --muted-foreground: #D1D5DB;
 
-  --accent: #60A5FA;
-  --accent-foreground: #0B1220;
+  --accent: #262626;
+  --accent-foreground: #F3F4F6;
 
-  --action: #60A5FA;
-  --action-foreground: #0B1220;
+  --action: #F3F4F6;
+  --action-foreground: #111827;
 
-  --success: #6EE7B7;
+  /* Soft, desaturated green — success/validation only */
+  --success: #86EFAC;
   --success-foreground: #052E1F;
 
+  /* Soft, desaturated red — errors/deletion only */
   --destructive: #FCA5A5;
   --destructive-foreground: #3B0A0A;
 
-  --warning: #FCD34D;
+  --warning: #FCD9A6;
   --warning-foreground: #3B2A05;
 
-  --info: #93C5FD;
-  --info-foreground: #0B1E3B;
+  --info: #D1D5DB;
+  --info-foreground: #111827;
 
-  --border: rgba(209, 213, 219, 0.12);
-  --border-strong: rgba(209, 213, 219, 0.22);
-  --input: rgba(209, 213, 219, 0.14);
-  --ring: color-mix(in oklab, #60A5FA 55%, transparent);
+  --border: rgba(209, 213, 219, 0.10);
+  --border-strong: rgba(209, 213, 219, 0.18);
+  --input: rgba(209, 213, 219, 0.12);
+  --ring: color-mix(in oklab, #F3F4F6 40%, transparent);
 
-  --gradient-primary: linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%);
+  --gradient-primary: linear-gradient(135deg, #F3F4F6 0%, #D1D5DB 100%);
   --gradient-bronze: linear-gradient(135deg, #6B7280, #9CA3AF);
-  --gradient-surface: linear-gradient(180deg, #1F2937 0%, #111827 100%);
-  --gradient-radial-gold: radial-gradient(circle at 50% 0%, color-mix(in oklab, #60A5FA 10%, transparent), transparent 60%);
+  --gradient-surface: linear-gradient(180deg, #1D1D1D 0%, #111827 100%);
+  --gradient-radial-gold: radial-gradient(circle at 50% 0%, color-mix(in oklab, #F3F4F6 6%, transparent), transparent 60%);
+
 
 
   color-scheme: dark;
