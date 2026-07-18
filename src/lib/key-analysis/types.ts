@@ -14,7 +14,7 @@
  * parallel — everything routes through this one.
  */
 
-export const ENGINE_VERSION = "1.0.0-hybrid";
+export const ENGINE_VERSION = "2.0.0-hpcp-multiseg";
 
 export type EngineId = "essentia" | "libkeyfinder" | "hybrid";
 

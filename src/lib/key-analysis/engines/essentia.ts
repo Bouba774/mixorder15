@@ -17,7 +17,7 @@ export const essentiaEngine: KeyDetectionEngine = {
   label: "Essentia (Krumhansl)",
   async detect(input: EngineInput, signal?: AbortSignal): Promise<EngineOutput> {
     const t0 = performance.now();
-    const chroma = await chromagram(input.samples, signal);
+    const { global: chroma } = await chromagram(input.samples, signal);
     const { best, second } = correlateProfiles(chroma, KRUMHANSL_MAJOR, KRUMHANSL_MINOR);
     // Confidence from margin over runner-up, clamped to [0..1].
     const margin = Math.max(0, best.score - second.score);
