@@ -100,107 +100,104 @@
 }
 
 /* =========================================================
-   DARK THEME (default) — Studio Noir (official MixOrder palette)
+   DARK THEME (default) — ChatGPT-inspired neutral palette
    ========================================================= */
 :root,
 .dark {
   --radius: 0.875rem;
 
-  /* Neutral Studio — charcoal surfaces, soft accents only for state */
-  --background: #111827;
-  --foreground: #F3F4F6;
+  /* Very dark near-black background, dark gray surfaces */
+  --background: #0D0D0D;
+  --foreground: #ECECEC;
 
-  --surface: #1D1D1D;
-  --surface-elevated: #262626;
+  --surface: #1A1A1A;
+  --surface-elevated: #212121;
 
-  --card: #1D1D1D;
-  --card-foreground: #F3F4F6;
+  --card: #1A1A1A;
+  --card-foreground: #ECECEC;
 
-  --popover: #1D1D1D;
-  --popover-foreground: #F3F4F6;
+  --popover: #212121;
+  --popover-foreground: #ECECEC;
 
-  /* Primary is a soft neutral light — no dominant hue */
-  --primary: #F3F4F6;
-  --primary-foreground: #111827;
-  --primary-glow: #D1D5DB;
+  /* MixOrder accent — interactive elements only */
+  --primary: #10A37F;
+  --primary-foreground: #0D0D0D;
+  --primary-glow: #1FBE96;
 
-  --bronze: #6B7280;
+  --bronze: #8E8EA0;
 
-  --secondary: #262626;
-  --secondary-foreground: #F3F4F6;
+  --secondary: #2A2A2A;
+  --secondary-foreground: #ECECEC;
 
-  --muted: #1D1D1D;
-  --muted-foreground: #D1D5DB;
+  --muted: #1A1A1A;
+  --muted-foreground: #A0A0A8;
 
-  --accent: #262626;
-  --accent-foreground: #F3F4F6;
+  --accent: #2A2A2A;
+  --accent-foreground: #ECECEC;
 
-  --action: #F3F4F6;
-  --action-foreground: #111827;
+  --action: #10A37F;
+  --action-foreground: #0D0D0D;
 
-  /* Soft, desaturated green — success/validation only */
-  --success: #86EFAC;
+  /* Soft state colors */
+  --success: #6EE7B7;
   --success-foreground: #052E1F;
 
-  /* Soft, desaturated red — errors/deletion only */
-  --destructive: #FCA5A5;
+  --destructive: #F87171;
   --destructive-foreground: #3B0A0A;
 
-  --warning: #FCD9A6;
-  --warning-foreground: #3B2A05;
+  --warning: #FBBF77;
+  --warning-foreground: #3B2405;
 
-  --info: #D1D5DB;
-  --info-foreground: #111827;
+  --info: #A0A0A8;
+  --info-foreground: #0D0D0D;
 
-  --border: rgba(209, 213, 219, 0.10);
-  --border-strong: rgba(209, 213, 219, 0.18);
-  --input: rgba(209, 213, 219, 0.12);
-  --ring: color-mix(in oklab, #F3F4F6 40%, transparent);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --input: rgba(255, 255, 255, 0.10);
+  --ring: color-mix(in oklab, #10A37F 45%, transparent);
 
-  --gradient-primary: linear-gradient(135deg, #F3F4F6 0%, #D1D5DB 100%);
-  --gradient-bronze: linear-gradient(135deg, #6B7280, #9CA3AF);
-  --gradient-surface: linear-gradient(180deg, #1D1D1D 0%, #111827 100%);
-  --gradient-radial-gold: radial-gradient(circle at 50% 0%, color-mix(in oklab, #F3F4F6 6%, transparent), transparent 60%);
-
-
+  --gradient-primary: linear-gradient(135deg, #10A37F 0%, #1FBE96 100%);
+  --gradient-bronze: linear-gradient(135deg, #6B6B76, #8E8EA0);
+  --gradient-surface: linear-gradient(180deg, #1A1A1A 0%, #0D0D0D 100%);
+  --gradient-radial-gold: radial-gradient(circle at 50% 0%, color-mix(in oklab, #10A37F 6%, transparent), transparent 60%);
 
   color-scheme: dark;
 }
 
 /* =========================================================
-   LIGHT THEME — Same identity, inverted surfaces
+   LIGHT THEME — ChatGPT-inspired inverted surfaces
    ========================================================= */
 .light {
   --radius: 0.875rem;
 
-  --background: #F3F4F6;
-  --foreground: #111827;
+  --background: #FFFFFF;
+  --foreground: #0D0D0D;
 
-  --surface: #FFFFFF;
-  --surface-elevated: #F9FAFB;
+  --surface: #F7F7F8;
+  --surface-elevated: #ECECF1;
 
-  --card: #FFFFFF;
-  --card-foreground: #111827;
+  --card: #F7F7F8;
+  --card-foreground: #0D0D0D;
 
   --popover: #FFFFFF;
-  --popover-foreground: #111827;
+  --popover-foreground: #0D0D0D;
 
-  --primary: #2563EB;
+  --primary: #10A37F;
   --primary-foreground: #FFFFFF;
-  --primary-glow: #60A5FA;
+  --primary-glow: #1FBE96;
 
-  --bronze: #6B7280;
+  --bronze: #8E8EA0;
 
-  --secondary: #E5E7EB;
-  --secondary-foreground: #111827;
+  --secondary: #ECECF1;
+  --secondary-foreground: #0D0D0D;
 
-  --muted: #F3F4F6;
-  --muted-foreground: #6B7280;
+  --muted: #F7F7F8;
+  --muted-foreground: #6B6B76;
 
-  --accent: #2563EB;
-  --accent-foreground: #FFFFFF;
+  --accent: #ECECF1;
+  --accent-foreground: #0D0D0D;
 
-  --action: #2563EB;
+  --action: #10A37F;
   --action-foreground: #FFFFFF;
 
   --success: #059669;
@@ -212,22 +209,22 @@
   --warning: #D97706;
   --warning-foreground: #FFFFFF;
 
-  --info: #3B82F6;
+  --info: #6B6B76;
   --info-foreground: #FFFFFF;
 
-  --border: rgba(17, 24, 39, 0.10);
-  --border-strong: rgba(17, 24, 39, 0.18);
-  --input: rgba(17, 24, 39, 0.14);
-  --ring: color-mix(in oklab, #2563EB 45%, transparent);
+  --border: rgba(13, 13, 13, 0.10);
+  --border-strong: rgba(13, 13, 13, 0.18);
+  --input: rgba(13, 13, 13, 0.14);
+  --ring: color-mix(in oklab, #10A37F 45%, transparent);
 
-  --gradient-primary: linear-gradient(135deg, #2563EB 0%, #60A5FA 100%);
-  --gradient-bronze: linear-gradient(135deg, #6B7280, #9CA3AF);
-  --gradient-surface: linear-gradient(180deg, #FFFFFF, #F3F4F6);
-  --gradient-radial-gold: radial-gradient(circle at 50% 0%, color-mix(in oklab, #2563EB 8%, transparent), transparent 60%);
-
+  --gradient-primary: linear-gradient(135deg, #10A37F 0%, #1FBE96 100%);
+  --gradient-bronze: linear-gradient(135deg, #6B6B76, #8E8EA0);
+  --gradient-surface: linear-gradient(180deg, #FFFFFF, #F7F7F8);
+  --gradient-radial-gold: radial-gradient(circle at 50% 0%, color-mix(in oklab, #10A37F 8%, transparent), transparent 60%);
 
   color-scheme: light;
 }
+
 
 html {
   /* Slightly tighter base scale for TempoKey-like density.
