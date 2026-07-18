@@ -15,6 +15,7 @@
 import { toCamelot } from "@/lib/library/camelot";
 import { detectKeyHybrid } from "./hybrid";
 import { decodeToMono } from "./chromagram";
+import { getOverride } from "./corrections";
 import type {
   EngineStats, KeyAnalysisData, QueueItem, QueueItemStatus,
 } from "./types";
@@ -236,6 +237,27 @@ class KeyAnalysisEngine {
       const t0 = performance.now();
       this.abort = new AbortController();
       try {
+        // Respect the user's manual override — never overwrite a track
+        // whose key was set by hand.
+        const override = getOverride(item.trackId);
+        if (override) {
+          const data: KeyAnalysisData = {
+            key: override,
+            camelot: toCamelot(override),
+            confidence: "high",
+            confidenceScore: 1,
+            engineVersion: ENGINE_VERSION,
+            analyzedAt: Date.now(),
+            analysisMs: 0,
+          };
+          this.persist?.(item.trackId, override, data);
+          item.result = data;
+          this.pushLog("info", `${item.name} → ${override} (correction utilisateur)`);
+          this.updateStatus(item, "done");
+          this.abort = null;
+          await new Promise((r) => setTimeout(r, NORMAL_DELAY_MS));
+          continue;
+        }
         const url = this.urlByTrackId.get(item.trackId);
         if (!url) throw new Error("URL indisponible");
         const decoded = await decodeToMono(url, this.abort.signal);
