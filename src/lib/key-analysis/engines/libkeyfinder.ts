@@ -20,7 +20,7 @@ export const libKeyFinderEngine: KeyDetectionEngine = {
   label: "LibKeyFinder (Temperley)",
   async detect(input: EngineInput, signal?: AbortSignal): Promise<EngineOutput> {
     const t0 = performance.now();
-    const chroma = await chromagram(input.samples, signal);
+    const { global: chroma } = await chromagram(input.samples, signal);
     const { best, second } = correlateProfiles(chroma, TEMPERLEY_MAJOR, TEMPERLEY_MINOR);
     const margin = Math.max(0, best.score - second.score);
     const score = Math.min(1, Math.max(0, best.score * 0.6 + margin * 4));
