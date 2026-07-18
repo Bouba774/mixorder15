@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { formatDuration, useWorkspace, type Track } from "@/lib/workspace-context";
 import { toCamelot } from "@/lib/library/camelot";
+import { recordCorrection, clearOverride } from "@/lib/key-analysis/corrections";
 
 /**
  * TrackInfoSheet — bottom sheet showing full metadata for a single track,
@@ -136,6 +137,7 @@ function SheetBody({
 
   const onKeyChange = (nextKey: string) => {
     setTrackAnalysis(track.id, { musicalKey: nextKey || null }, "manual-discdj");
+    recordCorrection(track.id, nextKey || null, track.musicalKey ?? null);
     quickFlash(setFlash, "Tonalité enregistrée");
   };
 
@@ -145,10 +147,12 @@ function SheetBody({
   };
   const resetKey = () => {
     setTrackAnalysis(track.id, { musicalKey: null }, "manual-discdj");
+    clearOverride(track.id);
     quickFlash(setFlash, "Tonalité réinitialisée");
   };
   const reanalyze = () => {
     setTrackAnalysis(track.id, { bpm: null, musicalKey: null }, "manual-discdj");
+    clearOverride(track.id);
     quickFlash(setFlash, "Réanalyse en cours…");
   };
 

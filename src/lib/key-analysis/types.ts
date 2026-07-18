@@ -14,7 +14,7 @@
  * parallel — everything routes through this one.
  */
 
-export const ENGINE_VERSION = "2.0.0-hpcp-multiseg";
+export const ENGINE_VERSION = "3.0.0-ensemble-learn";
 
 export type EngineId = "essentia" | "libkeyfinder" | "hybrid";
 
@@ -50,6 +50,14 @@ export interface HybridOutput {
   totalDurationMs: number;
   engineVersion: string;
   analyzedAt: number;
+  /** Secondary key when the track changes tonality mid-way. */
+  alternateKey?: string;
+  /** Per-segment detections (in order) — used by the UI to show key changes. */
+  segmentKeys?: Array<{ key: string; confidence: number }>;
+  /** Post-correction note (5th, relative, parallel) if a correction fired. */
+  correctionNote?: string;
+  /** True when the learned user-correction bias tipped the final decision. */
+  learnedBiasApplied?: boolean;
 }
 
 /** Persisted per-track descriptors — attached to AnalyzedTrackData. */
